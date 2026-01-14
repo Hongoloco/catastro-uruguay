@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Catastro local (SNIG)</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="map"></div>
+  <div class="panel">
+    <h3>Capas locales</h3>
+    <p>Base: OpenStreetMap</p>
+    <div class="actions">
+      <button id="btn-deptos">Departamentos (rápido)</button>
+      <button id="btn-carga-0">Cargar Catastro Rural (pesado)</button>
+      <button id="btn-carga-1">Cargar Catastro Rural y Urbano (pesado)</button>
+      <button id="btn-limpiar">Limpiar capas</button>
+    </div>
+    <h3 style="margin-top:10px">Buscar padrón (online)</h3>
+    <div class="actions form">
+      <label>
+        Padrón
+        <input type="number" id="in-padron" placeholder="Ej: 12345" />
+      </label>
+      <label>
+        Código Depto (1-19, opcional)
+        <input type="number" id="in-depto" min="1" max="19" placeholder="Ej: 10" />
+      </label>
+      <button id="btn-buscar">Buscar padrón</button>
+      <button id="btn-borrar-busqueda">Borrar resultado</button>
+    </div>
+    <h3 style="margin-top:10px">Buscar dirección</h3>
+    <div class="actions form">
+      <label>
+        Dirección
+        <input type="text" id="in-direccion" placeholder="Ej: Bulevar Artigas, Montevideo" autocomplete="off" />
+        <div id="autocomplete-list" class="autocomplete-items"></div>
+      </label>
+    </div>
+    <div id="geocode-resultados"></div>
+    <h3 style="margin-top:10px">Vista online (como SNIG)</h3>
+    <div class="actions">
+      <button id="btn-snig-on">Activar SNIG (MapServer)</button>
+      <button id="btn-snig-off">Desactivar SNIG</button>
+      <button id="btn-identify">Identificar al hacer clic</button>
+    </div>
+    <div class="actions">
+      <button id="btn-padrones">Mostrar números de padrón</button>
+    </div>
+    <small>Los archivos grandes pueden tardar en dibujar y consumir mucha memoria del navegador.</small>
+    <div id="status"></div>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
+  <script>
+    // Fallback a CDNJS si por SRI/CORS no cargó desde unpkg
+    if (!(window.L && L.esri)) {
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/esri-leaflet/3.0.12/esri-leaflet.min.js';
+      document.head.appendChild(s);
+    }
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

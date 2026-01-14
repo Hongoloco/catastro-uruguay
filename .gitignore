@@ -1,0 +1,14 @@
+# Entornos virtuales
+.venv/
+
+# Artefactos de PyInstaller
+build/
+dist/
+export_snig_catastro.spec
+
+# Salidas generadas
+outputs/
+
+# Cachés de Python
+__pycache__/
+*.pyc

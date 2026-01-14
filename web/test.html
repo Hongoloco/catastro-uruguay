@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Autocompletado</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .container { max-width: 400px; position: relative; }
+    input { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; }
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #ddd;
+      border-top: none;
+      z-index: 99;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: white;
+      display: none;
+    }
+    .autocomplete-items.show { display: block; }
+    .autocomplete-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .autocomplete-item:hover { background: #e9f5ff; }
+    #status { margin-top: 10px; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Test de Autocompletado de Direcciones</h1>
+  <div class="container">
+    <input type="text" id="direccion" placeholder="Escriba una dirección..." autocomplete="off">
+    <div id="autocomplete-list" class="autocomplete-items"></div>
+  </div>
+  <div id="status"></div>
+
+  <script>
+    const input = document.getElementById('direccion');
+    const list = document.getElementById('autocomplete-list');
+    const status = document.getElementById('status');
+    let timeout = null;
+
+    console.log('Test iniciado');
+    console.log('Input:', input);
+    console.log('List:', list);
+
+    input.addEventListener('input', (e) => {
+      const texto = e.target.value.trim();
+      console.log('Input event:', texto);
+      status.textContent = 'Escribiendo: ' + texto;
+
+      if (timeout) clearTimeout(timeout);
+      
+      if (texto.length < 2) {
+        list.classList.remove('show');
+        list.innerHTML = '';
+        return;
+      }
+
+      timeout = setTimeout(() => buscar(texto), 300);
+    });
+
+    async function buscar(texto) {
+      status.textContent = 'Buscando: ' + texto + '...';
+      console.log('Buscando:', texto);
+
+      // Usar Nominatim (OpenStreetMap) que es más confiable
+      const url = '/proxy/nominatim/search?q=' + encodeURIComponent(texto) + '&limit=8';
+      console.log('URL:', url);
+
+      try {
+        const res = await fetch(url);
+        console.log('Response:', res.status);
+        
+        if (!res.ok) {
+          status.textContent = 'Error: ' + res.status;
+          return;
+        }
+
+        const data = await res.json();
+        console.log('Data:', data);
+
+        // Nominatim devuelve un array directamente
+        const candidates = data.filter(c => c && c.lat && c.lon);
+        console.log('Candidates:', candidates.length);
+
+        if (candidates.length === 0) {
+          status.textContent = 'No se encontraron resultados';
+          list.classList.remove('show');
+          list.innerHTML = '';
+          return;
+        }
+
+        list.innerHTML = '';
+        candidates.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'autocomplete-item';
+          div.textContent = c.display_name;
+          div.onclick = () => {
+            input.value = c.display_name;
+            list.classList.remove('show');
+            status.textContent = 'Seleccionado: ' + c.display_name + ' (' + c.lat + ', ' + c.lon + ')';
+          };
+          list.appendChild(div);
+        });
+        list.classList.add('show');
+        status.textContent = 'Encontrados: ' + candidates.length + ' resultados';
+
+      } catch (err) {
+        console.error('Error:', err);
+        status.textContent = 'Error: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
