@@ -203,7 +203,21 @@
   <script>
     // Configuración
     const SNIG_URL = 'https://web.snig.gub.uy/arcgisserver/rest/services/Uruguay/SNIG_Catastro_Dos/MapServer';
+    // Proxy CORS gratuito para evitar bloqueo
+    const CORS_PROXY = 'https://corsproxy.io/?';
     const MIN_ZOOM_PARCELAS = 15;
+    
+    // Función para hacer fetch con proxy CORS
+    async function fetchWithProxy(url) {
+      // Intentar primero sin proxy (por si SNIG lo habilita)
+      try {
+        const resp = await fetch(url);
+        if (resp.ok) return resp;
+      } catch (e) {
+        // Si falla por CORS, usar proxy
+      }
+      return fetch(CORS_PROXY + encodeURIComponent(url));
+    }
     
     // Estado
     let parcelasLayer = null;
@@ -249,7 +263,7 @@
       });
       
       try {
-        const resp = await fetch(url);
+        const resp = await fetchWithProxy(url);
         const data = await resp.json();
         
         if (parcelasLayer) map.removeLayer(parcelasLayer);
@@ -308,7 +322,7 @@
       });
       
       try {
-        const resp = await fetch(url);
+        const resp = await fetchWithProxy(url);
         const data = await resp.json();
         
         if (data.features?.length > 0) {
@@ -350,7 +364,7 @@
       });
       
       try {
-        const resp = await fetch(url);
+        const resp = await fetchWithProxy(url);
         const data = await resp.json();
         
         if (data.features?.length > 0) {
