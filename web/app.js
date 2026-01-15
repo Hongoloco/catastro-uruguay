@@ -709,22 +709,14 @@ document.getElementById('toggle-sidebar')?.addEventListener('click', () => {
   document.querySelector('.sidebar')?.classList.toggle('collapsed');
 });
 
-// Acordeón
+// Acordeón - toggle para mostrar/ocultar contenido
 document.querySelectorAll('.accordion-header').forEach(header => {
-  header.addEventListener('click', () => {
-    const content = header.nextElementSibling;
-    const isActive = header.classList.contains('active');
-    
-    // Cerrar todos los demás
-    document.querySelectorAll('.accordion-header').forEach(h => {
-      h.classList.remove('active');
-      h.nextElementSibling?.classList.remove('show');
-    });
-    
-    // Toggle actual
-    if (!isActive) {
-      header.classList.add('active');
-      content?.classList.add('show');
+  header.addEventListener('click', function() {
+    // Toggle del header actual
+    this.classList.toggle('active');
+    const content = this.nextElementSibling;
+    if (content) {
+      content.classList.toggle('show');
     }
   });
 });

@@ -189,6 +189,29 @@ html, body {
   display: none;
 }
 
+/* ========== Layers Section ========== */
+.layers-section {
+  padding: 16px;
+  background: white;
+  border-radius: var(--radius-sm);
+  margin: 8px;
+  border: 1px solid var(--border);
+}
+
+.layers-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layers-section h4 i {
+  color: var(--primary);
+}
+
 /* ========== Accordion ========== */
 .accordion {
   flex: 1;
