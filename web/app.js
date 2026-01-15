@@ -181,10 +181,10 @@ map.on('click', async (e) => {
   }
 });
 
-// Botones SNIG
-document.getElementById('btn-snig-on').addEventListener('click', enableSnig);
-document.getElementById('btn-snig-off').addEventListener('click', disableSnig);
-document.getElementById('btn-identify').addEventListener('click', () => {
+// Botones SNIG (compatibilidad con interfaz vieja y nueva)
+document.getElementById('btn-snig-on')?.addEventListener('click', enableSnig);
+document.getElementById('btn-snig-off')?.addEventListener('click', disableSnig);
+document.getElementById('btn-identify')?.addEventListener('click', () => {
   identifyOn = !identifyOn;
   setStatus('Identify ' + (identifyOn ? 'activado' : 'desactivado'));
 });
@@ -335,7 +335,7 @@ function disablePadronLabels() {
   setStatus('Números de padrón desactivados.');
 }
 
-btnPadrones.addEventListener('click', () => {
+btnPadrones?.addEventListener('click', () => {
   if (padronLabelsOn) {
     disablePadronLabels();
   } else {
@@ -699,5 +699,92 @@ inPadron?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
     buscarPadron();
+  }
+});
+
+// ==================== NUEVA INTERFAZ ====================
+
+// Toggle sidebar
+document.getElementById('toggle-sidebar')?.addEventListener('click', () => {
+  document.querySelector('.sidebar')?.classList.toggle('collapsed');
+});
+
+// Acordeón
+document.querySelectorAll('.accordion-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const content = header.nextElementSibling;
+    const isActive = header.classList.contains('active');
+    
+    // Cerrar todos los demás
+    document.querySelectorAll('.accordion-header').forEach(h => {
+      h.classList.remove('active');
+      h.nextElementSibling?.classList.remove('show');
+    });
+    
+    // Toggle actual
+    if (!isActive) {
+      header.classList.add('active');
+      content?.classList.add('show');
+    }
+  });
+});
+
+// Checkbox toggle para SNIG
+document.getElementById('chk-snig')?.addEventListener('change', (e) => {
+  if (e.target.checked) {
+    enableSnig();
+  } else {
+    disableSnig();
+  }
+});
+
+// Checkbox toggle para padrones
+document.getElementById('chk-padrones')?.addEventListener('change', (e) => {
+  if (e.target.checked) {
+    padronLabelsOn = true;
+    if (map.getZoom() >= PADRON_MIN_ZOOM) {
+      showPadronLabels();
+    } else {
+      setStatus(`Haz zoom (nivel ${PADRON_MIN_ZOOM}+) para ver padrones`);
+    }
+  } else {
+    padronLabelsOn = false;
+    hidePadronLabels();
+  }
+});
+
+// Checkbox toggle para identificar
+document.getElementById('chk-identify')?.addEventListener('change', (e) => {
+  identifyOn = e.target.checked;
+  setStatus(identifyOn ? 'Haz clic en el mapa para identificar parcela' : '');
+  map.getContainer().style.cursor = identifyOn ? 'crosshair' : '';
+});
+
+// Botón Mi ubicación
+document.getElementById('btn-locate')?.addEventListener('click', () => {
+  setStatus('Buscando ubicación...');
+  map.locate({ setView: true, maxZoom: 16 });
+});
+
+map.on('locationfound', (e) => {
+  L.circleMarker(e.latlng, {
+    radius: 10,
+    color: '#2563eb',
+    fillColor: '#3b82f6',
+    fillOpacity: 0.8
+  }).addTo(geocodeGroup).bindPopup('Tu ubicación').openPopup();
+  setStatus('Ubicación encontrada');
+});
+
+map.on('locationerror', () => {
+  setStatus('No se pudo obtener la ubicación');
+});
+
+// Botón pantalla completa
+document.getElementById('btn-fullscreen')?.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
   }
 });

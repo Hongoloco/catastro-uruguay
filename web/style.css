@@ -1,124 +1,162 @@
-html, body, #map {
-  height: 100%;
+/* ========== Variables ========== */
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #64748b;
+  --success: #10b981;
+  --danger: #ef4444;
+  --bg-dark: #1e293b;
+  --bg-light: #f8fafc;
+  --text-dark: #1e293b;
+  --text-light: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --sidebar-width: 340px;
+  --transition: all 0.3s ease;
+}
+
+/* ========== Reset & Base ========== */
+* {
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
 }
 
-.panel {
+html, body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--text-dark);
+  background: var(--bg-light);
+}
+
+#map {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 1000;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(4px);
-  padding: 10px 12px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  max-width: 320px;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
 }
 
-.panel h3 {
-  margin: 6px 0 8px 0;
+/* ========== Sidebar ========== */
+.sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100%;
+  background: white;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  transition: var(--transition);
+}
+
+.sidebar.collapsed {
+  transform: translateX(calc(-100% + 48px));
+}
+
+.sidebar-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-header h1 i {
+  font-size: 22px;
+}
+
+.btn-icon {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.btn-icon:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.sidebar.collapsed .btn-icon i {
+  transform: rotate(180deg);
+}
+
+/* ========== Search Section ========== */
+.search-section {
+  padding: 16px;
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border);
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box i {
+  position: absolute;
+  left: 14px;
+  color: var(--text-light);
   font-size: 16px;
 }
 
-.actions {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
-  margin-bottom: 6px;
+.search-box input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border: 2px solid var(--border);
+  border-radius: 50px;
+  font-size: 14px;
+  transition: var(--transition);
+  background: white;
 }
 
-.actions.form label {
-  display: grid;
-  gap: 4px;
-  font-size: 12px;
+.search-box input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-input[type="number"], input[type="text"] {
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+.search-box input::placeholder {
+  color: var(--text-light);
 }
 
-button {
-  appearance: none;
-  border: 1px solid #ccc;
-  background: #f5f5f5;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-button:hover {
-  background: #eee;
-}
-
-#status {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #333;
-}
-
-.padron-label {
-  color: #1a1a1a;
-  font-weight: 600;
-  font-size: 12px;
-  white-space: nowrap;
-  text-shadow: 0 0 3px #fff, 0 0 6px #fff, 1px 1px 3px #fff;
-  transform: translate(-50%, -50%);
-}
-
-#geocode-resultados {
-  margin-top: 6px;
-  max-height: 200px;
-  overflow-y: auto;
-  font-size: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 6px;
-  background: rgba(255,255,255,0.9);
-}
-
-.geocode-item {
-  border-bottom: 1px solid #eee;
-  padding: 4px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.geocode-item:last-child {
-  border-bottom: none;
-}
-
-.geocode-item button {
-  align-self: flex-start;
-  padding: 4px 8px;
-  font-size: 11px;
-}
-
-/* Autocomplete dropdown */
-.actions.form label {
-  position: relative;
-  display: grid;
-  gap: 4px;
-  font-size: 12px;
-}
-
+/* ========== Autocomplete ========== */
 .autocomplete-items {
   position: absolute;
-  border: 1px solid #ddd;
-  border-top: none;
-  z-index: 9999;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
-  max-height: 220px;
-  overflow-y: auto;
   background: white;
-  border-radius: 0 0 6px 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  max-height: 280px;
+  overflow-y: auto;
   display: none;
+  z-index: 9999;
 }
 
 .autocomplete-items.show {
@@ -126,10 +164,12 @@ button:hover {
 }
 
 .autocomplete-item {
-  padding: 8px 10px;
+  padding: 12px 16px;
   cursor: pointer;
-  border-bottom: 1px solid #eee;
-  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  transition: var(--transition);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .autocomplete-item:last-child {
@@ -138,16 +178,372 @@ button:hover {
 
 .autocomplete-item:hover,
 .autocomplete-item.active {
-  background-color: #e9f5ff;
+  background: var(--bg-light);
 }
 
 .autocomplete-item .addr-main {
-  font-weight: 500;
-  color: #333;
+  color: var(--text-dark);
 }
 
 .autocomplete-item .addr-score {
-  font-size: 10px;
-  color: #888;
-  margin-left: 6px;
+  display: none;
+}
+
+/* ========== Accordion ========== */
+.accordion {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.accordion-item {
+  margin-bottom: 8px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: white;
+  border: 1px solid var(--border);
+}
+
+.accordion-header {
+  width: 100%;
+  padding: 14px 16px;
+  background: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  transition: var(--transition);
+}
+
+.accordion-header:hover {
+  background: var(--bg-light);
+}
+
+.accordion-header span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.accordion-header span i {
+  color: var(--primary);
+  width: 20px;
+}
+
+.accordion-header > i {
+  transition: var(--transition);
+  color: var(--text-light);
+  font-size: 12px;
+}
+
+.accordion-header.active > i {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding: 0 16px;
+}
+
+.accordion-content.show {
+  max-height: 500px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ========== Form Elements ========== */
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-light);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  transition: var(--transition);
+  background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ========== Buttons ========== */
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-secondary {
+  background: var(--bg-light);
+  color: var(--text-dark);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--border);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-dark);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+  background: var(--bg-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-group.vertical {
+  flex-direction: column;
+}
+
+.btn-group .btn {
+  flex: 1;
+}
+
+/* ========== Layer Toggles (Switches) ========== */
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.layer-toggle span {
+  font-size: 13px;
+  color: var(--text-dark);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border);
+  transition: var(--transition);
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: var(--transition);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+  background-color: var(--primary);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 8px 0;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+
+/* ========== Status Bar ========== */
+.status-bar {
+  padding: 12px 16px;
+  background: var(--bg-light);
+  border-top: 1px solid var(--border);
+  min-height: 44px;
+}
+
+#status {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+/* ========== Sidebar Footer ========== */
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.sidebar-footer small {
+  color: var(--text-light);
+}
+
+.sidebar-footer a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.sidebar-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ========== Map Controls ========== */
+.map-controls {
+  position: absolute;
+  top: 80px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-map {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dark);
+  font-size: 16px;
+  transition: var(--transition);
+}
+
+.btn-map:hover {
+  background: var(--bg-light);
+  color: var(--primary);
+}
+
+/* ========== Padrón Labels ========== */
+.padron-label {
+  color: #1a1a1a;
+  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
+  text-shadow: 0 0 3px #fff, 0 0 6px #fff, 1px 1px 3px #fff;
+  transform: translate(-50%, -50%);
+}
+
+/* ========== Leaflet Customization ========== */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: var(--shadow) !important;
+}
+
+.leaflet-control-zoom a {
+  background: white !important;
+  color: var(--text-dark) !important;
+  border: none !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 16px !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--bg-light) !important;
+  color: var(--primary) !important;
+}
+
+.leaflet-control-zoom-in {
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
+}
+
+.leaflet-control-zoom-out {
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 50%;
+    bottom: 0;
+    top: auto;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  
+  .sidebar.collapsed {
+    transform: translateY(calc(100% - 60px));
+  }
+  
+  .map-controls {
+    top: 12px;
+  }
 }

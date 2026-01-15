@@ -3,60 +3,140 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Catastro local (SNIG)</title>
+  <title>Visor Catastro Uruguay</title>
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="map"></div>
-  <div class="panel">
-    <h3>Capas locales</h3>
-    <p>Base: OpenStreetMap</p>
-    <div class="actions">
-      <button id="btn-deptos">Departamentos (rápido)</button>
-      <button id="btn-carga-0">Cargar Catastro Rural (pesado)</button>
-      <button id="btn-carga-1">Cargar Catastro Rural y Urbano (pesado)</button>
-      <button id="btn-limpiar">Limpiar capas</button>
+  
+  <!-- Panel lateral moderno -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1><i class="fas fa-map-marked-alt"></i> Catastro Uruguay</h1>
+      <button id="toggle-sidebar" class="btn-icon" title="Minimizar"><i class="fas fa-chevron-left"></i></button>
     </div>
-    <h3 style="margin-top:10px">Buscar padrón (online)</h3>
-    <div class="actions form">
-      <label>
-        Padrón
-        <input type="number" id="in-padron" placeholder="Ej: 12345" />
-      </label>
-      <label>
-        Código Depto (1-19, opcional)
-        <input type="number" id="in-depto" min="1" max="19" placeholder="Ej: 10" />
-      </label>
-      <button id="btn-buscar">Buscar padrón</button>
-      <button id="btn-borrar-busqueda">Borrar resultado</button>
-    </div>
-    <h3 style="margin-top:10px">Buscar dirección</h3>
-    <div class="actions form">
-      <label>
-        Dirección
-        <input type="text" id="in-direccion" placeholder="Ej: Bulevar Artigas, Montevideo" autocomplete="off" />
+    
+    <!-- Búsqueda de dirección (principal) -->
+    <div class="search-section">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="in-direccion" placeholder="Buscar dirección..." autocomplete="off" />
         <div id="autocomplete-list" class="autocomplete-items"></div>
-      </label>
+      </div>
     </div>
-    <div id="geocode-resultados"></div>
-    <h3 style="margin-top:10px">Vista online (como SNIG)</h3>
-    <div class="actions">
-      <button id="btn-snig-on">Activar SNIG (MapServer)</button>
-      <button id="btn-snig-off">Desactivar SNIG</button>
-      <button id="btn-identify">Identificar al hacer clic</button>
+    
+    <!-- Acordeón de secciones -->
+    <div class="accordion">
+      
+      <!-- Buscar Padrón -->
+      <div class="accordion-item">
+        <button class="accordion-header active">
+          <span><i class="fas fa-hashtag"></i> Buscar Padrón</span>
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="accordion-content show">
+          <div class="form-group">
+            <label>Número de Padrón</label>
+            <input type="number" id="in-padron" placeholder="Ej: 12345" />
+          </div>
+          <div class="form-group">
+            <label>Departamento (opcional)</label>
+            <select id="in-depto">
+              <option value="">Todos</option>
+              <option value="1">Montevideo</option>
+              <option value="2">Artigas</option>
+              <option value="3">Canelones</option>
+              <option value="4">Cerro Largo</option>
+              <option value="5">Colonia</option>
+              <option value="6">Durazno</option>
+              <option value="7">Flores</option>
+              <option value="8">Florida</option>
+              <option value="9">Lavalleja</option>
+              <option value="10">Maldonado</option>
+              <option value="11">Paysandú</option>
+              <option value="12">Río Negro</option>
+              <option value="13">Rivera</option>
+              <option value="14">Rocha</option>
+              <option value="15">Salto</option>
+              <option value="16">San José</option>
+              <option value="17">Soriano</option>
+              <option value="18">Tacuarembó</option>
+              <option value="19">Treinta y Tres</option>
+            </select>
+          </div>
+          <div class="btn-group">
+            <button id="btn-buscar" class="btn btn-primary"><i class="fas fa-search"></i> Buscar</button>
+            <button id="btn-borrar-busqueda" class="btn btn-secondary"><i class="fas fa-times"></i> Limpiar</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Capas del mapa -->
+      <div class="accordion-item">
+        <button class="accordion-header">
+          <span><i class="fas fa-layer-group"></i> Capas</span>
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="accordion-content">
+          <div class="layer-toggle">
+            <label class="switch">
+              <input type="checkbox" id="chk-snig" />
+              <span class="slider"></span>
+            </label>
+            <span>Catastro SNIG</span>
+          </div>
+          <div class="layer-toggle">
+            <label class="switch">
+              <input type="checkbox" id="chk-padrones" />
+              <span class="slider"></span>
+            </label>
+            <span>Números de padrón</span>
+          </div>
+          <div class="layer-toggle">
+            <label class="switch">
+              <input type="checkbox" id="chk-identify" />
+              <span class="slider"></span>
+            </label>
+            <span>Identificar al clic</span>
+          </div>
+          <hr />
+          <p class="section-label">Datos locales</p>
+          <div class="btn-group vertical">
+            <button id="btn-deptos" class="btn btn-outline"><i class="fas fa-border-all"></i> Departamentos</button>
+            <button id="btn-carga-0" class="btn btn-outline"><i class="fas fa-tractor"></i> Catastro Rural</button>
+            <button id="btn-carga-1" class="btn btn-outline"><i class="fas fa-city"></i> Rural + Urbano</button>
+            <button id="btn-limpiar" class="btn btn-outline"><i class="fas fa-trash"></i> Limpiar capas</button>
+          </div>
+        </div>
+      </div>
+      
     </div>
-    <div class="actions">
-      <button id="btn-padrones">Mostrar números de padrón</button>
+    
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div id="status"></div>
     </div>
-    <small>Los archivos grandes pueden tardar en dibujar y consumir mucha memoria del navegador.</small>
-    <div id="status"></div>
+    
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <small>Datos: <a href="https://www.gub.uy/snig" target="_blank">SNIG Uruguay</a></small>
+    </div>
   </div>
+  
+  <!-- Controles flotantes del mapa -->
+  <div class="map-controls">
+    <button id="btn-locate" class="btn-map" title="Mi ubicación"><i class="fas fa-crosshairs"></i></button>
+    <button id="btn-fullscreen" class="btn-map" title="Pantalla completa"><i class="fas fa-expand"></i></button>
+  </div>
+  
+  <div id="geocode-resultados" style="display:none;"></div>
 
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -65,7 +145,6 @@
   ></script>
   <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
   <script>
-    // Fallback a CDNJS si por SRI/CORS no cargó desde unpkg
     if (!(window.L && L.esri)) {
       var s = document.createElement('script');
       s.src = 'https://cdnjs.cloudflare.com/ajax/libs/esri-leaflet/3.0.12/esri-leaflet.min.js';
