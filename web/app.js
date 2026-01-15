@@ -120,17 +120,31 @@ function enableSnig() {
     if (snigLayer) return;
     if (!(window.L && L.esri)) {
       setStatus('Esri Leaflet no cargó todavía. Recarga la página o espera un momento.');
+      console.error('L.esri no disponible:', { L: !!window.L, esri: !!(window.L && L.esri) });
       return;
     }
+    console.log('Activando SNIG con URL:', SNIG_URL);
     snigLayer = L.esri.dynamicMapLayer({
       url: SNIG_URL,
       opacity: 0.8,
       useCors: true,
-      // Dejar que el servicio maneje visibilidad/escala; opcionalmente podríamos especificar layers: [1,2]
+      layers: [1, 2]  // Explícitamente mostrar capas de padrones
     }).addTo(map);
-    setStatus('SNIG (MapServer) activado.');
+    
+    // Manejar errores de carga
+    snigLayer.on('load', function() {
+      console.log('SNIG cargado correctamente');
+      setStatus('SNIG (MapServer) activado.');
+    });
+    
+    snigLayer.on('error', function(e) {
+      console.error('Error cargando SNIG:', e);
+      setStatus('Error cargando SNIG: ' + (e.error || 'desconocido'));
+    });
+    
+    setStatus('Cargando SNIG...');
   } catch (e) {
-    console.error(e);
+    console.error('Error en enableSnig:', e);
     setStatus('No se pudo activar SNIG: ' + e.message);
   }
 }
@@ -722,7 +736,10 @@ document.querySelectorAll('.accordion-header').forEach(header => {
 });
 
 // Checkbox toggle para SNIG
-document.getElementById('chk-snig')?.addEventListener('change', (e) => {
+const chkSnig = document.getElementById('chk-snig');
+console.log('chk-snig elemento:', chkSnig);
+chkSnig?.addEventListener('change', (e) => {
+  console.log('SNIG checkbox cambiado:', e.target.checked);
   if (e.target.checked) {
     enableSnig();
   } else {
