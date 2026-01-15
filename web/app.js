@@ -112,8 +112,8 @@ const SNIG_URL_PROXY = '/proxy/mapserver';  // Proxy local para evitar CORS
 const LOCATOR_URL = 'https://web.snig.gub.uy/arcgisserver/rest/services/LocatorUY/GeocodeServer';
 const LOCATOR_URL_PROXY = '/proxy/geocode';  // Proxy local para geocoder
 
-// Detectar si estamos usando el servidor proxy (puerto 5000)
-const USE_PROXY = window.location.port === '5000';
+// Siempre usar proxy - funciona tanto local como en Render
+const USE_PROXY = true;
 
 function enableSnig() {
   try {

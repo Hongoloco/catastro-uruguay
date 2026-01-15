@@ -16,8 +16,8 @@ log.setLevel(logging.ERROR)
 app = Flask(__name__)
 CORS(app)
 
-# Configuración
-PORT = 5000
+# Configuración - usar variable de entorno PORT para Render, o 5000 local
+PORT = int(os.environ.get('PORT', 5000))
 WEB_DIR = os.path.join(os.path.dirname(__file__), 'web')
 OUTPUTS_DIR = os.path.join(os.path.dirname(__file__), 'outputs')
 
