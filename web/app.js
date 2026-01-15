@@ -80,31 +80,24 @@ function clearLayers() {
   setStatus('Capas removidas.');
 }
 
-// Botones
-const btnDeptos = document.getElementById('btn-deptos');
-btnDeptos.addEventListener('click', () => {
+// Botones de datos locales (opcionales - pueden no existir en versión online)
+document.getElementById('btn-deptos')?.addEventListener('click', () => {
   loadGeoJSON('../outputs/departamentos.geojson', setLayerDeptos, styleDeptos);
 });
 
-const btnC0 = document.getElementById('btn-carga-0');
-btnC0.addEventListener('click', () => {
+document.getElementById('btn-carga-0')?.addEventListener('click', () => {
   if (!confirm('La capa Catastro Rural es muy grande (~1 GB). Esto puede congelar el navegador. ¿Continuar?')) return;
   loadGeoJSON('../outputs/catastro_rural.geojson', setLayerCatas0, { color: '#cc3300', weight: 0.5, fillOpacity: 0.1 });
 });
 
-const btnC1 = document.getElementById('btn-carga-1');
-btnC1.addEventListener('click', () => {
+document.getElementById('btn-carga-1')?.addEventListener('click', () => {
   if (!confirm('La capa Catastro Rural y Urbano es muy grande (~1 GB). Esto puede congelar el navegador. ¿Continuar?')) return;
   loadGeoJSON('../outputs/catastro_rural_urbano.geojson', setLayerCatas1, { color: '#0066cc', weight: 0.5, fillOpacity: 0.1 });
 });
 
-const btnClear = document.getElementById('btn-limpiar');
-btnClear.addEventListener('click', clearLayers);
+document.getElementById('btn-limpiar')?.addEventListener('click', clearLayers);
 
-setStatus('Listo. Carga Departamentos para empezar.');
-
-// Cargar automáticamente el contorno de Uruguay al iniciar
-loadGeoJSON('../outputs/departamentos.geojson', setLayerDeptos, styleDeptos);
+setStatus('Listo. Activa Catastro SNIG para ver parcelas.');
 
 // -------------------- Vista online (SNIG) --------------------
 const SNIG_URL = 'https://web.snig.gub.uy/arcgisserver/rest/services/Uruguay/SNIG_Catastro_Dos/MapServer';
@@ -118,7 +111,7 @@ const USE_PROXY = true;
 // Capa GeoJSON para parcelas catastrales
 let snigGeoJsonLayer = null;
 let snigEnabled = false;
-const SNIG_MIN_ZOOM = 15;  // Zoom mínimo para cargar parcelas (evita sobrecargar)
+const SNIG_MIN_ZOOM = 13;  // Zoom mínimo para cargar parcelas
 const SNIG_STYLE = { 
   color: '#e65100', 
   weight: 1.5, 
@@ -132,6 +125,8 @@ async function loadParcelasInView() {
   if (!snigEnabled) return;
   
   const zoom = map.getZoom();
+  console.log('loadParcelasInView - zoom actual:', zoom, 'minimo:', SNIG_MIN_ZOOM);
+  
   if (zoom < SNIG_MIN_ZOOM) {
     setStatus(`Haz más zoom (nivel ${SNIG_MIN_ZOOM}+) para ver parcelas`);
     return;
@@ -151,15 +146,20 @@ async function loadParcelasInView() {
     outFields: 'NroPadron,Codigo,NombreDepto,NombreLoc',
     returnGeometry: 'true',
     f: 'geojson',
-    resultRecordCount: '500'  // Limitar resultados
+    resultRecordCount: '500'
   });
+  
+  console.log('Consultando parcelas:', url);
   
   try {
     setStatus('Cargando parcelas...');
     const resp = await fetch(url);
+    console.log('Respuesta:', resp.status, resp.ok);
+    
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     
     const geojson = await resp.json();
+    console.log('GeoJSON recibido:', geojson.features?.length || 0, 'features');
     
     // Limpiar capa anterior
     if (snigGeoJsonLayer) {
@@ -196,8 +196,9 @@ async function loadParcelasInView() {
 
 function enableSnig() {
   snigEnabled = true;
-  snigLayer = true;  // Marcador para compatibilidad con otras funciones
-  console.log('SNIG habilitado');
+  snigLayer = true;  // Marcador para compatibilidad
+  console.log('SNIG habilitado, zoom actual:', map.getZoom());
+  setStatus('Catastro SNIG activado - haz zoom para ver parcelas');
   
   // Cargar parcelas del área visible
   loadParcelasInView();
@@ -814,13 +815,13 @@ document.getElementById('chk-padrones')?.addEventListener('change', (e) => {
   if (e.target.checked) {
     padronLabelsOn = true;
     if (map.getZoom() >= PADRON_MIN_ZOOM) {
-      showPadronLabels();
+      fetchPadronesInBounds();
     } else {
       setStatus(`Haz zoom (nivel ${PADRON_MIN_ZOOM}+) para ver padrones`);
     }
   } else {
     padronLabelsOn = false;
-    hidePadronLabels();
+    clearPadronLayer();
   }
 });
 
