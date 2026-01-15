@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catastro Uruguay - Visor</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    
+    #map { position: absolute; top: 0; left: 0; right: 0; bottom: 40px; z-index: 1; }
+    
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      padding: 15px;
+      max-width: 320px;
+    }
+    
+    .controls h3 {
+      margin-bottom: 10px;
+      color: #1a73e8;
+      font-size: 16px;
+    }
+    
+    .search-box {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    
+    .search-box input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .search-box button {
+      padding: 8px 12px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .search-box button:hover { background: #1557b0; }
+    
+    .layer-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0;
+    }
+    
+    .switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+    
+    .switch input { opacity: 0; width: 0; height: 0; }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .3s;
+      border-radius: 22px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider { background-color: #1a73e8; }
+    input:checked + .slider:before { transform: translateX(18px); }
+    
+    .status-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: #f8f9fa;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      font-size: 13px;
+      color: #666;
+      z-index: 1000;
+    }
+    
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 0 0 4px 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+      z-index: 1001;
+    }
+    
+    .suggestions.show { display: block; }
+    
+    .suggestion-item {
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .suggestion-item:hover { background: #f5f5f5; }
+    
+    .search-container { position: relative; flex: 1; }
+    .search-container input { width: 100%; }
+    
+    .btn-locate {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+    
+    .btn-locate:hover { background: #f5f5f5; }
+    
+    .loading {
+      display: none;
+      color: #1a73e8;
+    }
+    
+    .loading.show { display: inline; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  
+  <div class="controls">
+    <h3><i class="fas fa-map"></i> Catastro Uruguay</h3>
+    
+    <div class="search-box">
+      <div class="search-container">
+        <input type="text" id="search-input" placeholder="Buscar dirección o padrón..." autocomplete="off" />
+        <div class="suggestions" id="suggestions"></div>
+      </div>
+      <button id="btn-search"><i class="fas fa-search"></i></button>
+    </div>
+    
+    <div class="layer-toggle">
+      <label class="switch">
+        <input type="checkbox" id="chk-catastro" />
+        <span class="slider"></span>
+      </label>
+      <span>Mostrar parcelas <span class="loading" id="loading"><i class="fas fa-spinner fa-spin"></i></span></span>
+    </div>
+    
+    <div class="layer-toggle">
+      <label class="switch">
+        <input type="checkbox" id="chk-identify" />
+        <span class="slider"></span>
+      </label>
+      <span>Identificar al clic</span>
+    </div>
+  </div>
+  
+  <button class="btn-locate" id="btn-locate" title="Mi ubicación">
+    <i class="fas fa-location-crosshairs"></i>
+  </button>
+  
+  <div class="status-bar">
+    <span id="status">Listo. Busca una dirección o activa las parcelas.</span>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Configuración
+    const SNIG_URL = 'https://web.snig.gub.uy/arcgisserver/rest/services/Uruguay/SNIG_Catastro_Dos/MapServer';
+    const MIN_ZOOM_PARCELAS = 15;
+    
+    // Estado
+    let parcelasLayer = null;
+    let identifyOn = false;
+    let searchTimeout = null;
+    
+    // Mapa
+    const map = L.map('map').setView([-34.9, -56.2], 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    
+    const statusEl = document.getElementById('status');
+    const setStatus = (msg) => statusEl.textContent = msg;
+    
+    const loadingEl = document.getElementById('loading');
+    const showLoading = (show) => loadingEl.classList.toggle('show', show);
+    
+    // Cargar parcelas del área visible
+    async function loadParcelas() {
+      const zoom = map.getZoom();
+      if (zoom < MIN_ZOOM_PARCELAS) {
+        setStatus(`Haz más zoom (nivel ${MIN_ZOOM_PARCELAS}+) para ver parcelas`);
+        return;
+      }
+      
+      showLoading(true);
+      setStatus('Cargando parcelas...');
+      
+      const bounds = map.getBounds();
+      const url = `${SNIG_URL}/1/query?` + new URLSearchParams({
+        geometry: `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`,
+        geometryType: 'esriGeometryEnvelope',
+        inSR: '4326',
+        outSR: '4326',
+        spatialRel: 'esriSpatialRelIntersects',
+        outFields: 'NroPadron,Codigo,NombreDepto,NombreLoc',
+        returnGeometry: 'true',
+        f: 'geojson',
+        resultRecordCount: '500'
+      });
+      
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        
+        if (parcelasLayer) map.removeLayer(parcelasLayer);
+        
+        if (data.features?.length > 0) {
+          parcelasLayer = L.geoJSON(data, {
+            style: { color: '#e65100', weight: 1.5, fillColor: '#ff9800', fillOpacity: 0.15 },
+            onEachFeature: (f, layer) => {
+              const p = f.properties;
+              layer.bindPopup(`<b>Padrón ${p.NroPadron || '-'}</b><br>
+                Código: ${p.Codigo || '-'}<br>
+                Depto: ${p.NombreDepto || '-'}<br>
+                Localidad: ${p.NombreLoc || '-'}`);
+            }
+          }).addTo(map);
+          setStatus(`${data.features.length} parcelas cargadas`);
+        } else {
+          setStatus('No hay parcelas en esta zona');
+        }
+      } catch (e) {
+        setStatus('Error cargando parcelas');
+        console.error(e);
+      }
+      showLoading(false);
+    }
+    
+    // Buscar dirección con Nominatim
+    async function searchAddress(query) {
+      if (!query || query.length < 3) return [];
+      
+      const url = `https://nominatim.openstreetmap.org/search?` + new URLSearchParams({
+        q: query + ', Uruguay',
+        format: 'json',
+        limit: '5',
+        countrycodes: 'uy'
+      });
+      
+      try {
+        const resp = await fetch(url, { headers: { 'User-Agent': 'CatastroVisor/1.0' } });
+        return await resp.json();
+      } catch (e) {
+        return [];
+      }
+    }
+    
+    // Buscar padrón
+    async function searchPadron(numero) {
+      setStatus(`Buscando padrón ${numero}...`);
+      
+      const url = `${SNIG_URL}/1/query?` + new URLSearchParams({
+        where: `NroPadron=${numero}`,
+        outFields: 'NroPadron,Codigo,NombreDepto,NombreLoc',
+        returnGeometry: 'true',
+        outSR: '4326',
+        f: 'geojson'
+      });
+      
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        
+        if (data.features?.length > 0) {
+          const feature = data.features[0];
+          const layer = L.geoJSON(feature, {
+            style: { color: '#d32f2f', weight: 3, fillColor: '#f44336', fillOpacity: 0.3 }
+          }).addTo(map);
+          
+          map.fitBounds(layer.getBounds(), { padding: [50, 50] });
+          
+          const p = feature.properties;
+          layer.bindPopup(`<b>Padrón ${p.NroPadron}</b><br>
+            Código: ${p.Codigo || '-'}<br>
+            Depto: ${p.NombreDepto || '-'}<br>
+            Localidad: ${p.NombreLoc || '-'}`).openPopup();
+          
+          setStatus(`Padrón ${numero} encontrado`);
+        } else {
+          setStatus(`Padrón ${numero} no encontrado`);
+        }
+      } catch (e) {
+        setStatus('Error buscando padrón');
+      }
+    }
+    
+    // Identificar parcela al clic
+    async function identifyAt(latlng) {
+      setStatus('Identificando...');
+      
+      const url = `${SNIG_URL}/1/query?` + new URLSearchParams({
+        geometry: `${latlng.lng},${latlng.lat}`,
+        geometryType: 'esriGeometryPoint',
+        inSR: '4326',
+        outSR: '4326',
+        spatialRel: 'esriSpatialRelIntersects',
+        outFields: '*',
+        returnGeometry: 'true',
+        f: 'geojson'
+      });
+      
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        
+        if (data.features?.length > 0) {
+          const p = data.features[0].properties;
+          L.popup()
+            .setLatLng(latlng)
+            .setContent(`<b>Padrón ${p.NroPadron || '-'}</b><br>
+              Código: ${p.Codigo || '-'}<br>
+              Depto: ${p.NombreDepto || '-'}<br>
+              Localidad: ${p.NombreLoc || '-'}`)
+            .openOn(map);
+          setStatus('Parcela identificada');
+        } else {
+          setStatus('No se encontró parcela en este punto');
+        }
+      } catch (e) {
+        setStatus('Error identificando');
+      }
+    }
+    
+    // Event listeners
+    const searchInput = document.getElementById('search-input');
+    const suggestionsEl = document.getElementById('suggestions');
+    
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      const query = e.target.value.trim();
+      
+      if (query.length < 3) {
+        suggestionsEl.classList.remove('show');
+        return;
+      }
+      
+      searchTimeout = setTimeout(async () => {
+        const results = await searchAddress(query);
+        
+        if (results.length > 0) {
+          suggestionsEl.innerHTML = results.map(r => 
+            `<div class="suggestion-item" data-lat="${r.lat}" data-lon="${r.lon}">${r.display_name}</div>`
+          ).join('');
+          suggestionsEl.classList.add('show');
+        } else {
+          suggestionsEl.classList.remove('show');
+        }
+      }, 300);
+    });
+    
+    suggestionsEl.addEventListener('click', (e) => {
+      if (e.target.classList.contains('suggestion-item')) {
+        const lat = parseFloat(e.target.dataset.lat);
+        const lon = parseFloat(e.target.dataset.lon);
+        map.setView([lat, lon], 17);
+        searchInput.value = e.target.textContent;
+        suggestionsEl.classList.remove('show');
+        setStatus('Ubicación encontrada');
+      }
+    });
+    
+    document.getElementById('btn-search').addEventListener('click', () => {
+      const query = searchInput.value.trim();
+      if (/^\d+$/.test(query)) {
+        searchPadron(query);
+      } else if (query) {
+        searchAddress(query).then(results => {
+          if (results.length > 0) {
+            map.setView([results[0].lat, results[0].lon], 17);
+          }
+        });
+      }
+    });
+    
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-search').click();
+    });
+    
+    document.getElementById('chk-catastro').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        loadParcelas();
+        map.on('moveend', loadParcelas);
+      } else {
+        if (parcelasLayer) map.removeLayer(parcelasLayer);
+        map.off('moveend', loadParcelas);
+        setStatus('Parcelas desactivadas');
+      }
+    });
+    
+    document.getElementById('chk-identify').addEventListener('change', (e) => {
+      identifyOn = e.target.checked;
+      map.getContainer().style.cursor = identifyOn ? 'crosshair' : '';
+      setStatus(identifyOn ? 'Haz clic en el mapa para identificar' : '');
+    });
+    
+    map.on('click', (e) => {
+      if (identifyOn) identifyAt(e.latlng);
+    });
+    
+    document.getElementById('btn-locate').addEventListener('click', () => {
+      setStatus('Buscando ubicación...');
+      map.locate({ setView: true, maxZoom: 16 });
+    });
+    
+    map.on('locationfound', (e) => {
+      L.circleMarker(e.latlng, { radius: 10, color: '#1a73e8' })
+        .addTo(map)
+        .bindPopup('Tu ubicación').openPopup();
+      setStatus('Ubicación encontrada');
+    });
+    
+    map.on('locationerror', () => setStatus('No se pudo obtener ubicación'));
+    
+    // Cerrar sugerencias al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-container')) {
+        suggestionsEl.classList.remove('show');
+      }
+    });
+  </script>
+</body>
+</html>
