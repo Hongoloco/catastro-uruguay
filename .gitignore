@@ -6,8 +6,10 @@ build/
 dist/
 export_snig_catastro.spec
 
-# Salidas generadas
-outputs/
+# Salidas generadas (excepto departamentos.geojson que es necesario para el visor)
+outputs/*.csv
+outputs/tmp/
+outputs/catastro_*.geojson
 
 # Cachés de Python
 __pycache__/
