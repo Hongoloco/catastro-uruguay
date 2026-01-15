@@ -128,10 +128,16 @@ function enableSnig() {
       url: SNIG_URL,
       opacity: 0.8,
       useCors: true,
-      layers: [1, 2]  // Explícitamente mostrar capas de padrones
+      layers: [0, 1],  // Catastro Rural (0) y Rural/Urbano (1)
+      format: 'png32',
+      f: 'image'
     }).addTo(map);
     
-    // Manejar errores de carga
+    // Manejar eventos de la capa
+    snigLayer.on('loading', function() {
+      console.log('SNIG: cargando tiles...');
+    });
+    
     snigLayer.on('load', function() {
       console.log('SNIG cargado correctamente');
       setStatus('SNIG (MapServer) activado.');
@@ -139,10 +145,13 @@ function enableSnig() {
     
     snigLayer.on('error', function(e) {
       console.error('Error cargando SNIG:', e);
-      setStatus('Error cargando SNIG: ' + (e.error || 'desconocido'));
+      setStatus('Error cargando SNIG: ' + (e.error?.message || e.error || 'desconocido'));
     });
     
-    setStatus('Cargando SNIG...');
+    // También verificar que la capa se añadió al mapa
+    console.log('snigLayer añadido:', !!snigLayer, 'en mapa:', map.hasLayer(snigLayer));
+    
+    setStatus('Cargando SNIG... (haz zoom para ver detalles)');
   } catch (e) {
     console.error('Error en enableSnig:', e);
     setStatus('No se pudo activar SNIG: ' + e.message);
