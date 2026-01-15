@@ -115,55 +115,111 @@ const LOCATOR_URL_PROXY = '/proxy/geocode';  // Proxy local para geocoder
 // Siempre usar proxy - funciona tanto local como en Render
 const USE_PROXY = true;
 
-function enableSnig() {
+// Capa GeoJSON para parcelas catastrales
+let snigGeoJsonLayer = null;
+let snigEnabled = false;
+const SNIG_MIN_ZOOM = 15;  // Zoom mínimo para cargar parcelas (evita sobrecargar)
+const SNIG_STYLE = { 
+  color: '#e65100', 
+  weight: 1.5, 
+  opacity: 0.9, 
+  fillColor: '#ff9800',
+  fillOpacity: 0.15 
+};
+
+// Función para cargar parcelas del área visible
+async function loadParcelasInView() {
+  if (!snigEnabled) return;
+  
+  const zoom = map.getZoom();
+  if (zoom < SNIG_MIN_ZOOM) {
+    setStatus(`Haz más zoom (nivel ${SNIG_MIN_ZOOM}+) para ver parcelas`);
+    return;
+  }
+  
+  const bounds = map.getBounds();
+  const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
+  
+  const baseUrl = USE_PROXY ? SNIG_URL_PROXY : SNIG_URL;
+  // Usar capa 1 (Catastro Rural y Urbano) que tiene más detalle
+  const url = `${baseUrl}/1/query?` + new URLSearchParams({
+    geometry: bbox,
+    geometryType: 'esriGeometryEnvelope',
+    inSR: '4326',
+    outSR: '4326',
+    spatialRel: 'esriSpatialRelIntersects',
+    outFields: 'NroPadron,Codigo,NombreDepto,NombreLoc',
+    returnGeometry: 'true',
+    f: 'geojson',
+    resultRecordCount: '500'  // Limitar resultados
+  });
+  
   try {
-    if (snigLayer) return;
-    if (!(window.L && L.esri)) {
-      setStatus('Esri Leaflet no cargó todavía. Recarga la página o espera un momento.');
-      console.error('L.esri no disponible:', { L: !!window.L, esri: !!(window.L && L.esri) });
+    setStatus('Cargando parcelas...');
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    
+    const geojson = await resp.json();
+    
+    // Limpiar capa anterior
+    if (snigGeoJsonLayer) {
+      map.removeLayer(snigGeoJsonLayer);
+    }
+    
+    if (!geojson.features || geojson.features.length === 0) {
+      setStatus('No hay parcelas en esta zona');
       return;
     }
-    console.log('Activando SNIG con URL:', SNIG_URL);
-    snigLayer = L.esri.dynamicMapLayer({
-      url: SNIG_URL,
-      opacity: 0.8,
-      useCors: true,
-      layers: [0, 1],  // Catastro Rural (0) y Rural/Urbano (1)
-      format: 'png32',
-      f: 'image'
+    
+    // Crear nueva capa GeoJSON
+    snigGeoJsonLayer = L.geoJSON(geojson, {
+      style: SNIG_STYLE,
+      onEachFeature: (feature, layer) => {
+        const p = feature.properties || {};
+        const html = `
+          <strong>Padrón ${p.NroPadron || 'S/N'}</strong><br>
+          Código: ${p.Codigo || '-'}<br>
+          Depto: ${p.NombreDepto || '-'}<br>
+          Localidad: ${p.NombreLoc || '-'}
+        `;
+        layer.bindPopup(html);
+      }
     }).addTo(map);
     
-    // Manejar eventos de la capa
-    snigLayer.on('loading', function() {
-      console.log('SNIG: cargando tiles...');
-    });
+    setStatus(`${geojson.features.length} parcelas cargadas`);
     
-    snigLayer.on('load', function() {
-      console.log('SNIG cargado correctamente');
-      setStatus('SNIG (MapServer) activado.');
-    });
-    
-    snigLayer.on('error', function(e) {
-      console.error('Error cargando SNIG:', e);
-      setStatus('Error cargando SNIG: ' + (e.error?.message || e.error || 'desconocido'));
-    });
-    
-    // También verificar que la capa se añadió al mapa
-    console.log('snigLayer añadido:', !!snigLayer, 'en mapa:', map.hasLayer(snigLayer));
-    
-    setStatus('Cargando SNIG... (haz zoom para ver detalles)');
   } catch (e) {
-    console.error('Error en enableSnig:', e);
-    setStatus('No se pudo activar SNIG: ' + e.message);
+    console.error('Error cargando parcelas:', e);
+    setStatus('Error cargando parcelas: ' + e.message);
   }
 }
 
+function enableSnig() {
+  snigEnabled = true;
+  snigLayer = true;  // Marcador para compatibilidad con otras funciones
+  console.log('SNIG habilitado');
+  
+  // Cargar parcelas del área visible
+  loadParcelasInView();
+  
+  // Escuchar movimientos del mapa para recargar
+  map.on('moveend', loadParcelasInView);
+}
+
 function disableSnig() {
-  if (snigLayer) {
-    map.removeLayer(snigLayer);
-    snigLayer = null;
+  snigEnabled = false;
+  snigLayer = null;
+  
+  // Limpiar capa
+  if (snigGeoJsonLayer) {
+    map.removeLayer(snigGeoJsonLayer);
+    snigGeoJsonLayer = null;
   }
-  setStatus('SNIG (MapServer) desactivado.');
+  
+  // Dejar de escuchar movimientos
+  map.off('moveend', loadParcelasInView);
+  
+  setStatus('Catastro SNIG desactivado');
 }
 
 // Identify al clic usando el servicio
@@ -745,10 +801,7 @@ document.querySelectorAll('.accordion-header').forEach(header => {
 });
 
 // Checkbox toggle para SNIG
-const chkSnig = document.getElementById('chk-snig');
-console.log('chk-snig elemento:', chkSnig);
-chkSnig?.addEventListener('change', (e) => {
-  console.log('SNIG checkbox cambiado:', e.target.checked);
+document.getElementById('chk-snig')?.addEventListener('change', (e) => {
   if (e.target.checked) {
     enableSnig();
   } else {
